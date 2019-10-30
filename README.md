@@ -4,36 +4,174 @@
 
 In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
----
-
-The goals / steps of this project are the following:
-
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
-
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
-
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `output_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
-
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
-
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    " # Advanced Lane Finding Project\n",
+    "\n",
+    "The goals / steps of this project are the following:\n",
+    "\n",
+    "* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.\n",
+    "* Apply a distortion correction to raw images.\n",
+    "* Use color transforms, gradients, etc., to create a thresholded binary image.\n",
+    "* Apply a perspective transform to rectify binary image (\"birds-eye view\").\n",
+    "* Detect lane pixels and fit to find the lane boundary.\n",
+    "* Determine the curvature of the lane and vehicle position with respect to center.\n",
+    "* Warp the detected lane boundaries back onto the original image.\n",
+    "* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.\n",
+    "\n",
+    "[//]: # (Image References)\n",
+    "\n",
+    "[image1]: ./examples/image1.png\n",
+    "[image2]: ./examples/image2.png\n",
+    "[image3]: ./examples/image3.png\n",
+    "[image4]: ./examples/image4.png\n",
+    "[image5]: ./examples/image5.png\n",
+    "[image6]: ./examples/image6.png\n",
+    "[video1]: ./project_video_result_final.mp4 \n",
+    "\n",
+    "\n",
+    "### To finish this project, files that i have created are listed:\n",
+    "\n",
+    "1. 'for test images.ipynb'.    for test images\n",
+    "2. 'P2_task.ipynb' .     for video testing\n",
+    "3. 'project_decription.ipynb' .    as writeup file.\n",
+    "4. result video is /project_video_result_final.mp4\n",
+    "5. extra task for challenge video, result is /project_video_challenge_final.mp4\n",
+    "\n",
+    "---\n",
+    "\n",
+    "### Camera Calibration\n",
+    "\n",
+    "#### 1. compute the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.\n",
+    "\n",
+    "I start by preparing \"object points\", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  \n",
+    "\n",
+    "I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function. I applied this distortion correction to the test image 'camera_cal/calibration1.jpg' using the `cv2.undistort()` function and obtained this result: \n",
+    "\n",
+    "![alt text][image1]\n",
+    "\n",
+    "the parameter 'mtx', 'dist' are saved in the file 'camera_cal/dist_picklecol.p', which can be reused for the following tasks\n",
+    "\n",
+    "### Pipeline (test images)\n",
+    "\n",
+    "I use '`for test images.ipynb`' to do the test.\n",
+    "\n",
+    "#### 1. Provide the distortion-corrected images and perform a perspective transform to use on these images.\n",
+    "\n",
+    "The code for distortion corrected and perspective transform using on test images is included in function called `warp()`. The `warp()` function takes test image as input. For the internal of the function, `cv2.undistort()` will be used to correct the distortion, source points `src` and destination points `dst` for the perspective transform are chosen as follows: \n",
+    "\n",
+    "| Source        | Destination   | \n",
+    "|:-------------:|:-------------:| \n",
+    "| 585, 460      | 250, 0        | \n",
+    "| 200, 720      | 250, 720      |\n",
+    "| 1096, 720     | 960, 720      |\n",
+    "| 700, 460      | 960, 0        |\n",
+    "\n",
+    "I verified that my perspective transform was working realtively well, the sided black filled area are quite small. Here are the original test images and the corresponding processed images `transform_undst_img`\n",
+    "![alt text][image2]\n",
+    "![alt text][image3]\n",
+    "The distortion-corrected original test images are saved as `undist_img`\n",
+    "\n",
+    "#### 2. transform images into binary images and apply different types of filters to sift the points belonging most likely to the lane lines.\n",
+    "\n",
+    "LAB filters are defined as functions:\n",
+    "\n",
+    "`color_wy` : LAB Color space filter, i use that with the corresponding parameters to identify white and yellow colors.\n",
+    "\n",
+    "Threshold of L,A,B for both white and yellow colors are adjusted and then combined as filter `(yellow == 1) | (white == 1)`. When only this filter is applied, the effect seems quite well.\n",
+    "![alt text][image4]\n",
+    "\n",
+    "Whatsmore, i also define several other filters to improve the stability of the indentification in different outer environments (hope they are useful 😏):\n",
+    "\n",
+    "`filter_sobelx`: Sobel Filter in x direction\n",
+    "`filter_mag`: Magnitude of the gradient\n",
+    "`filter_dir`: Direction of the gradient\n",
+    "`filter_hls`: HLS filter for the channel S\n",
+    "`filter_hls1`: HLS filter for the channel L\n",
+    "\n",
+    "the logic of combination of these filers are:\n",
+    "`[Sobel_x | LAB |(Magnitude & Directon) | HLS] = 1`. Effect as follows:\n",
+    "![alt text][image5]\n",
+    "\n",
+    "I use this combined filter to handle the follwing processing. \n",
+    "\n",
+    "\n",
+    "#### 3. Edit a function `hist()` to integrate three functions:\n",
+    "\n",
+    "1. identify the points of the left and right lanes using sliding windows and fit lanes with polynomials.\n",
+    "\n",
+    "2. calculate the radius of curvature of the lanes.\n",
+    "\n",
+    "3. calculate the position of the vehicle with respect to center.\n",
+    "\n",
+    "\n",
+    "#### 6. Retransform and draw/text the result on `undist_img` \n",
+    "\n",
+    "Here is my result on test images:\n",
+    "![alt text][image6]\n",
+    "\n",
+    "---\n",
+    "\n",
+    "### Pipeline (video)\n",
+    "\n",
+    "I use '`P2_task.ipynb`' to do the video test. The main part of the program starts form the cell 'video loading and processing'. \n",
+    "\n",
+    "Here's a [link to my video result](./project_video_result_final.mp4)\n",
+    "\n",
+    "---\n",
+    "\n",
+    "### Discussion and Questions\n",
+    "\n",
+    "#### 1. Briefly discuss problems / issues i faced in my implementation of this project.\n",
+    "\n",
+    "1. To make it robust, each filter itself and the combination of each filter should be adjusted.\n",
+    "\n",
+    "2. in the project_video_result_final.mp4, at about 24. Second, Lane detection is quite bad. I have tried to use LAB filter as mentioned above alone, afterwards, this bad fluctuation do not happen and the total video result runs even better, but when i use LAB filter alone for challenge video, it can not run and hints fault.\n",
+    "\n",
+    "3. The effect on challenge video seems very bad, i would like to ask some recommendations about tuning and choosing the image filter and also other approaches to improve that.\n",
+    "Here's a [link to my challenge video result](./project_video_challenge_final.mp4)\n",
+    "\n",
+    "Thank you very much!\n",
+    "\n",
+    "Vielen Dank!\n",
+    "\n",
+    "mit freundlichen Grüßen\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
 
